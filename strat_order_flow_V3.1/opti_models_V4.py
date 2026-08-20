@@ -26,8 +26,8 @@ bid          = df["bid"].values.astype(np.float32)
 restant      = df["restant"].values.astype(np.float32)
 side         = df["side"].values.astype(np.float32)
 imbalance    = df["imbalance"].values.astype(np.float32)
-pred_PM      = df["pred_PM"].values.astype(np.float32)
-pred_DD      = df["pred_DD"].values.astype(np.float32)
+pred_PM      = df["benef_max"].values.astype(np.float32)
+pred_DD      = df["drawdown_max"].values.astype(np.float32)
 entry_signal = df["entry_signal"].values.astype(np.float32)
 
 N = len(ask)
@@ -44,7 +44,7 @@ print(f"Nombre de bougies : {candle_ids[-1]}")
 param_grid = {
     'LIMIT_TIME_MIN': [30, 60],
     'LIMIT_TIME_MAX': [120,200],
-    'PROBA':          [0.65],
+    'PROBA':          [0.70, 0.75, 0.80, 0.85],
     'MIN_ASK':        [0.32],
     'MAX_ASK':        [0.75],
     'TR_DROP':        [0.2, 0.40, 0.60],
@@ -104,12 +104,14 @@ def _backtest_core(ask, bid, restant, side, imbalance,
         candle_i     = candle_ids[i]
         trailing_sl  = 0.0
         closed        = False
+        pic_proba     = proba_i
 
         j = i + 1
         while j < N:
             
+            pic_proba =  entry_signal[j] if (entry_signal[j] > pic_proba) else pic_proba
             current_price = bid[j]
-            drop_proba    = entry_signal[i] - entry_signal[j]
+            drop_proba    = pic_proba - entry_signal[j]
 
             # Nouvelle bougie → sortie sans clôture
             if candle_ids[j] != candle_i:
@@ -141,7 +143,7 @@ def _backtest_core(ask, bid, restant, side, imbalance,
             profit = current_price * (1.0 / ep) - 1.0
 
             # Condition de clôture
-            if drop_proba > LIMIT_DROP or current_price > 0.98 or (trailing_sl  > 0 and trailing_sl > current_price) or (restant[j]   < 30 and current_price > ep):
+            if drop_proba > LIMIT_DROP or current_price > 0.98 or (trailing_sl  > 0 and trailing_sl > current_price) or (restant[j] < 30 and current_price > ep):
 
                 benefice_total += profit
                 nbr_ligne      += 1

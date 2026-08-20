@@ -74,7 +74,7 @@ regressor_proba = joblib.load("xgboost_model_v3_target.pkl")
 
 TICK_VAR            = 1
 LIMIT_TIME_MAX      = 200
-LIMIT_TIME_MIN      = 30
+LIMIT_TIME_MIN      = 60
 IMBALANCE_LIMIT     = 0.08
 DELTA_IMB_ENTRY     = 0.06
 DELTA_IMB_EXIT      = -0.1
@@ -87,10 +87,10 @@ MIN_ASK             = 0.32
 CSV_FILE            = "order_flow_v3.csv"
 CSV_LIVE            = "learning_live_v3.csv"
 BUDGET              = 1
-TL_LEVEL            = 0.20
-PROBA               = 0.65
+TL_LEVEL            = 0.10
+PROBA               = 0.75
 TR_DROP             = 0.20
-DROP_LIMIT          = 0.60
+DROP_LIMIT          = 0.30
 RR                  = 2
 
 FENETRE_COURTE  = 5    # secondes — momentum immédiat
@@ -902,7 +902,7 @@ async def log_trade_data():
 
                 send_telegram(
                 f"""
-                Entrainement modele classifier: 
+                Entrainement modele classifier 3.1: 
 
                 NBR datas : {len(df)}
                 Accuracy  : {auccurancy:.2f}
@@ -1111,7 +1111,7 @@ while True:
                 
                 send_telegram(
                     f"""
-                🛑 POSITION CLOTURE - Convergence - order_flow_v3 : 
+                🛑 POSITION CLOTURE - Convergence - order_flow_v3.1: 
 
                     Side      : {trade_took['side']}
                     BTC Price : {btc_price}
@@ -1274,10 +1274,13 @@ while True:
         if trade_took["trade"] == True:   
 
             current_proba = proba if (trade_took["side"] == "BUY") else proba_no
+            
+            pic_proba =  current_proba if (current_proba > pic_proba) else pic_proba
+
                         
             trade_took ["resultat"]   = (yes_bid*size) - trade_took["cout"] if trade_took ["side"] == "BUY" else (no_bid*size) - trade_took["cout"]
             
-            proba_drop = trade_took["proba_entry"] - current_proba
+            proba_drop = pic_proba - current_proba
             
             if (proba_drop > TR_DROP or (trade_took["side"] == "BUY" and (trade_took["resultat"] > 0.0 and  yes_bid >= trade_took["ask_entry"] + (TL_LEVEL*2)))) and trailing_stop < yes_bid-TL_LEVEL:
                 trailing_stop = yes_bid-TL_LEVEL
@@ -1314,7 +1317,7 @@ while True:
             if trade_took["trade"] == False:
                 send_telegram(
                     f"""
-                🛑 POSITION CLOTURE order_flow_v3 : 
+                🛑 POSITION CLOTURE order_flow_v3.1 : 
 
                     Side      : {trade_took['side']}
                     BTC Price : {btc_price}
@@ -1469,6 +1472,7 @@ while True:
             trade_took["moyenne_ratio_entry"] = moyenne_yes if trade_took["side"] == "BUY" else moyenne_no 
             trade_took["tendance_entry"] = tendance_yes if trade_took["side"] == "BUY" else tendance_no
             trade_took["slope_entry"] = slope_yes if trade_took["side"] == "BUY" else slope_no
+            pic_proba     = trade_took["proba_entry"]
             
             trailing_stop = 0
             # size = float(details["size_matched"]) if details != None and float(details["size_matched"]) > 0 else round(trade_took["cout"] / executed_price, 2)- 0.1
@@ -1482,7 +1486,7 @@ while True:
 
             send_telegram(
                 f"""
-            📈 POSITION OUVERTE order_flow_v3 - (scalping)
+            📈 POSITION OUVERTE order_flow_v3.1 - (scalping)
 
             Side      : {trade_took['side']}
             BTC Price : {btc_price}

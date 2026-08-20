@@ -192,4 +192,4 @@ def learning_data_classifier(CSV_FILE, LEARNING_OUT):
     return accuracy_score(last_y_test, pred_final), roc_auc_score(last_y_test, last_proba), confusion_matrix(last_y_test, pred_final), importances
     
 
-# learning_data_classifier("entrainement_xboost_V3.csv", "xgboost_model_v3_target.pkl")
+# learning_data_classifier("learning_live_v3.csv", "xgboost_model_v3_target.pkl")

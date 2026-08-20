@@ -97,7 +97,7 @@ def classifier_target_vectorized(CSV_FILE):
         # Condition win 2 : restant < 30 ET bid > entry_price
         win2 = same_side & (future_restant < 30) & (future_bid > ep)
 
-        win_mask = win1 | win2
+        win_mask = win1  | win2
         
         if win_mask.any():
             target[i] = 1

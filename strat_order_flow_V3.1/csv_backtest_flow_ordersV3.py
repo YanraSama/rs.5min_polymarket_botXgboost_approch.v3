@@ -6,13 +6,13 @@ from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
 import numba
 
-LIMIT_TIME_MIN = 30
+LIMIT_TIME_MIN = 60
 LIMIT_TIME_MAX = 200
 MIN_ASK = 0.32
 MAX_ASK = 0.75
-PROBA = 0.65
-TR_DROP = 0.30
-LIMIT_DROP = 0.40
+PROBA = 0.75
+TR_DROP = 0.20
+LIMIT_DROP = 0.30
 TRAILING_SL = 0.10
 RR = 1.25
 SL = 0
@@ -93,11 +93,13 @@ def _backtest_core(ask, bid, restant, side, imbalance, pred_PM, pred_DD, entry_s
         candle_i = candle_ids[i]
         trailing_sl = 0.0
         j = i + 1
+        pic_proba     = proba_i
+
         while j < N:
             
-           
+            pic_proba =  entry_signal[j] if (entry_signal[j] > pic_proba) else pic_proba
             current_price = bid[j]
-            drop_proba = entry_signal[i] - entry_signal[j]
+            drop_proba    = pic_proba - entry_signal[j]
             
             if candle_ids[j] != candle_i:
                
@@ -129,7 +131,7 @@ def _backtest_core(ask, bid, restant, side, imbalance, pred_PM, pred_DD, entry_s
             profit = current_price * (1.0 / ep) - 1.0
             
             # Condition de clôture
-            if drop_proba > LIMIT_DROP or current_price > 0.98 or (trailing_sl  > 0 and trailing_sl > current_price) or (restant[j]   < 30 and current_price > ep):
+            if drop_proba > LIMIT_DROP or current_price > 0.98 or (trailing_sl  > 0 and trailing_sl > current_price) or (restant[j] < 30 and current_price > ep):
                 
                 benefice_total += profit
                 nbr_ligne += 1
